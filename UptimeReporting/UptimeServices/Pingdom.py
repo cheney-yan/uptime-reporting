@@ -52,6 +52,7 @@ class Pingdom(BaseUptimeService):
 
   def check_get_all_summary_avg(self, checks, from_ts, to_ts, report_progress_func=None):
     checks_uptime = { '_meta': { 'service_name': self.SERVICE_NAME, 'from_ts': from_ts, 'to_ts': to_ts }, '_checks': [] }
+    down_detail=[]
     pr_total, pr_counter, pr_thr = checks['count'], 0, 10 # report every 10% increase
     for check in checks['_data']['checks']:
       pr_counter += 1
@@ -63,7 +64,6 @@ class Pingdom(BaseUptimeService):
         continue # skip check
       # process check
       summary = self.__check_get_summary_avg(check['id'], from_ts, to_ts)
-      down_detail=[]
       self.__get_outage(check['name'], check['id'], from_ts, to_ts, down_detail=down_detail)
       logging.debug(summary)
       status = summary['summary']['status']
@@ -104,7 +104,7 @@ class Pingdom(BaseUptimeService):
               ]
           ))
       else:
-        down_detail.append(name+ '-'*30+ 'up'+ '-'*30)
+        down_detail.append('"' +name+ '",' + '-'*30+ 'up'+ '-'*30)
         continue # no need to mention.
       
     down_detail.append('='*80)
