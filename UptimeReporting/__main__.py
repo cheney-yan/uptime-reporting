@@ -103,13 +103,12 @@ def main():
     if args.verbosity != '0':
       sys.stdout.write("Progress: {}%   \r".format(progress))
       sys.stdout.flush()
-  checks_uptime = service.check_get_all_summary_avg(checks, date_range['start_ts'], date_range['end_ts'], print_progress)
+  checks_uptime, down_detail = service.check_get_all_summary_avg(checks, date_range['start_ts'], date_range['end_ts'], print_progress)
 
   # if tag grouping is enabled, build a data structure based on tag hierarchy
   if args.tags_grouping:
     printver('Grouping checks based on tag hierarchy: {}'.format(args.tags_grouping))
     checks_uptime = UptimeReporting.TagsGrouping.get_uptime_tags_groups(checks_uptime, args.tags_grouping)
-
   # add aggregated statistics
   printver('Aggregating check uptime statistics')
   UptimeReporting.Aggreg.add_aggregated_stats(checks_uptime)
@@ -121,13 +120,14 @@ def main():
     jinja_template=args.report_jinja_template, jinja_flags=args.report_jinja_flags, text_use_colors=args.report_text_colors
   )
   rendered_report = report.render()
+  rendered_report += '\n================== Detailed downtime reports ===============\n'
+  rendered_report += '\n'.join(down_detail)
   if args.report_filename:
     with open(args.report_filename, 'w') as f:
       f.write(rendered_report)
     printver(f'Report written to {args.report_filename}')
   else:
     print(rendered_report)
-
 
 if __name__=="__main__":
   main()

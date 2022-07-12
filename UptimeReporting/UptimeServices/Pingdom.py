@@ -22,7 +22,7 @@ import requests
 import json
 import logging
 from .Base import BaseUptimeService
-
+import pendulum
 
 class Pingdom(BaseUptimeService):
 
@@ -63,6 +63,8 @@ class Pingdom(BaseUptimeService):
         continue # skip check
       # process check
       summary = self.__check_get_summary_avg(check['id'], from_ts, to_ts)
+      down_detail=[]
+      self.__get_outage(check['name'], check['id'], from_ts, to_ts, down_detail=down_detail)
       logging.debug(summary)
       status = summary['summary']['status']
       # additional info: calculate the percentage of uptime
@@ -80,12 +82,32 @@ class Pingdom(BaseUptimeService):
       if report_progress_func and pr > pr_thr:
         pr_thr += 10
         report_progress_func(pr)
-    return checks_uptime
+    return checks_uptime, down_detail
 
   def __check_get_summary_avg(self, check_id, from_ts, to_ts):
     req = self.__req_get(f'/summary.average/{check_id}?from={from_ts}&to={to_ts}&includeuptime=true')
     return json.loads(req.text)
 
+  def __get_outage(self, name, check_id, from_ts, to_ts, down_detail):
+    resp = self.__req_get(f'/summary.outage/{check_id}?from={from_ts}&to={to_ts}&includeuptime=true').json()
+    for state in resp.get('summary',{}).get('states',[]):
+      if state['status'] == 'down' or (state['status'] == 'up' and state['timeto']-state['timefrom'] < 3600): # up longer than 1 hours, still down
+          down_detail.append(
+        ','.join(
+            '"'+str(value)+'"'
+            for value in [
+                name, 
+                state['status'],
+                state['timeto']-state['timefrom'],
+                pendulum.from_timestamp(state['timefrom']).to_day_datetime_string(),
+                pendulum.from_timestamp(state['timeto']).to_day_datetime_string()
+              ]
+          ))
+      else:
+        down_detail.append(name+ '-'*30+ 'up'+ '-'*30)
+        continue # no need to mention.
+      
+    down_detail.append('='*80)
   # utility method to handle requests, will raise exception if request fails
   def __req_get(self, url):
     req = requests.get(self.PINGDOM_API_URL+url, headers=self.req_headers)

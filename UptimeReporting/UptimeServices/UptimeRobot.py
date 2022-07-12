@@ -104,7 +104,7 @@ class UptimeRobot(BaseUptimeService):
           pr_thr += 10
           report_progress_func(pr)
       checks_offset += checks_page
-    return checks_uptime
+    return checks_uptime, ['Not implemented']
 
   # utility method to handle requests, will raise exception if request fails
   def __req(self, path, post_dict):

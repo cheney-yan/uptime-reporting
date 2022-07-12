@@ -41,7 +41,8 @@ setup(
   install_requires=[
     "Jinja2>=2.11.1",
     "requests>=2.23.0",
-    "tabulate>=0.8.7"
+    "tabulate>=0.8.7",
+    "pendulum"
   ],
 
   # metadata to display on PyPI
