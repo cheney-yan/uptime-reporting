@@ -11,7 +11,11 @@ Here only contains dirty hacks. No quality assured. Only tested on Mac M1.
 # Build
 
 ```
-docker build . -t cheneyyan/uptime-reporting:latest
+docker buildx build . \
+  --push \
+  --platform linux/amd64,linux/arm64 \
+  --tag cheneyyan/uptime-reporting:latest 
+
 docker push cheneyyan/uptime-reporting:latest
 ```
 
